@@ -1,7 +1,15 @@
 # Model Construction Utils (moconut)
 
-We borrow the conventions of functional patch construction from MaxMSP/Puredata/etc.. and present a python library of tools to create complex models:
-1. Each module has a number of inlets, taking in objects.
-2. Each module does something with those objects.
-3. Each module has a number of outlets, each outputs objects.
+```Python
+    import moconut
 
+    model = moconut([
+        "in -> (x0:t<:,28,28>)",
+        "(x0:t<:,28,28>) -> flatten -> (x0:t<:,784>)",
+        "(x0:t<:,784>) -> linear<784,256> -> layernorm<256> -> relu -> (x0:t<:,256>)",
+        "(x0:t<:,256>) -> linear<256,256> -> layernorm<256> -> relu -> (x0:t<:,256>)",
+        "(x0:t<:,256>) -> linear<256,256> -> layernorm<256> -> relu -> (x0:t<:,256>)",
+        "(x0:t<:,256>) -> linear<256,256> -> layernorm<256> -> relu -> (x0:t<:,256>)",
+        "(x0:t<:,256>) -> out"
+    ])
+```
