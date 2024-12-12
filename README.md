@@ -1,5 +1,14 @@
 # Model Construction Utils (moconut)
 
+<!-- `m.o.c.o.n.u.t. oversees construction of new universal templates` -->
+
+1. Various python utilities for fast model prototyping.
+2. A parser of a DSL for overseeing the above.
+
+## TODO:
+- [ ] Control flow
+- [ ] DSL Parser
+
 ## Proposed format:
 1. Objects:
 	- ```{object_name(num_times),...}(num_times)<*params>[*inlet_names] -> [*outlet_names]```
