@@ -3,11 +3,20 @@ import moconut
 from typing import Optional
 
 class PyTorchSequentialModule(torch.nn.Module):
+    """
+        This module treats a list of PyTorch module configs as a sequence of operations to be applied 
+        to an input.  
+        
+        config:
+            modules: a list of PyTorch module configs
+    """
     def __init__(
         self,
         config : dict,
         device : Optional[str] = None
     ):
+        super(PyTorchSequentialModule, self).__init__()
+        
         self.module_list = torch.nn.ModuleList()
         for module_config in config['modules']:
             if module_config['module'] in moconut.pytorch.module_map:
