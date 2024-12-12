@@ -25,16 +25,16 @@ module_map = {
 # String to argument packing for a torch.nn.Module
 ################################################################
 pack_config_map = {
-    'fc'          : torch_pack.pack_linear_config,
-    'linear'      : torch_pack.pack_linear_config,
-    'conv2d'      : torch_pack.pack_conv2d_config,
+    'fc'          : torch_pack.transforms.pack_linear_config,
+    'linear'      : torch_pack.transforms.pack_linear_config,
+    'conv2d'      : torch_pack.transforms.pack_conv2d_config,
     
-    'maxpool2d'   : torch_pack.pack_maxpool2d_config,
-    'avgpool2d'   : torch_pack.pack_avgpool2d_config,
+    'maxpool2d'   : torch_pack.pooling.pack_maxpool2d_config,
+    'avgpool2d'   : torch_pack.pooling.pack_avgpool2d_config,
     
-    'batchnorm2d' : torch_pack.pack_batchnorm2d_config,
+    'batchnorm2d' : torch_pack.norms.pack_batchnorm2d_config,
 
-    'relu'        : torch_pack.pack_relu_config,
+    'relu'        : torch_pack.activations.pack_relu_config,
 
-    'flatten'     : torch_pack.pack_flatten_config
+    'flatten'     : torch_pack.utility.pack_flatten_config
 }
