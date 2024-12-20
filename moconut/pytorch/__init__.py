@@ -1,9 +1,7 @@
 from . import pack
-from .ops import *
+from . import patch
+
 from .maps import *
-from .modules import *
-
-
 
 # class MoconutMap:
 #     def __init__(self):

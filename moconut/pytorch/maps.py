@@ -1,6 +1,5 @@
 import torch
 
-from .ops import *
 from . import pack as torch_pack
 
 ################################################################
