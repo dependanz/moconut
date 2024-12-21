@@ -1,6 +1,6 @@
 # Model Construction Utils (moconut)
 
-<!-- `m.o.c.o.n.u.t. oversees construction of new universal templates` -->
+<!-- `m.o.c.o.n.u.t. oversees construction of new universal templates` ... nah. -->
 
 1. Various python utilities for fast model prototyping.
 2. A parser of a DSL for overseeing the above.
@@ -8,6 +8,7 @@
 ## TODO:
 - [ ] Control flow
 - [ ] DSL Parser
+- [ ] Generalize to other AD libs
 
 ## Proposed format:
 1. Objects:

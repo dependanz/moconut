@@ -8,7 +8,7 @@ class ComputeGraphModule(torch.nn.Module):
 
         :config:
         compute_graph -> list[dict], a compute graph where each element in the list is a config for 
-        a "patch cable"
+        a patch object
     """
     def __init__(
         self,
@@ -23,22 +23,21 @@ class ComputeGraphModule(torch.nn.Module):
         # Setup Compute Graph
         ################################################################
         self.operations = torch.nn.ModuleList()
-        for cable in config['compute_graph']:
+        for subpatch in config['compute_graph']:
             self.operations.append(
-                moconut.pytorch.patch.cable_map[cable['op_type']](
-                    inlets  = cable['inlets'],
-                    outlets = cable['outlets'],
-                    config  = cable['config'],
+                moconut.pytorch.patch.subpatch_map[subpatch['op_type']](
+                    inlets  = subpatch['inlets'],
+                    outlets = subpatch['outlets'],
+                    config  = subpatch['config'],
                 )
             )
 
-    def forward(self, nodes):
+    def forward(self, messages):
         for operation in self.operations:
             outlet_group = operation.send(
-                inlet_group = [nodes[inlet] for inlet in operation.inlets]
+                inlet_group = [messages[inlet] for inlet in operation.inlets]
             )
             for i, outlet in enumerate(operation.outlets):
-                nodes[outlet] = outlet_group[i]
+                messages[outlet] = outlet_group[i]
         
-        return nodes
-    
+        return messages

@@ -1,4 +1,8 @@
-from . import pytorch
+from .maps import *
+from .patch import *
+
+from . import pack
+from . import dependence
 
 ################################################################
 # Empty user-defined module map
