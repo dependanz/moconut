@@ -2,29 +2,33 @@ import torch
 import moconut
 from typing import Optional
 
-class ModuleSubPatch(torch.nn.Module):
-    def __init__(
-        self,
-        op_type : str,
-        inlets  : list[str],
-        outlets : list[str],
-        config  : dict,
-        device  : Optional[str] = None
-    ):
-        super(ModuleSubPatch, self).__init__()
-        self.op_type = op_type
-        self.inlets  = inlets
-        self.outlets = outlets
-        self.config  = config
-        self.device  = device
+class Subpatch(torch.nn.Module):
+		def __init___(
+				self,
+				op_type : str,
+				parents : Optional[List[torch.nn.Module]],
+				inlets  : List[str],
+				outlets : List[str],
+				config  : dict,
+				device  : Optional[str] = None
+		):
+				super(Subpatch, self).__init__()
+				self.op_type = op_type
+				self.inlets  = inlets
+				self.outlets = outlets
+				self.config  = config
+				self.device  = device
+				
+		def forward(self, in_messages : dict) -> dict:
+				messages = in_messages
+				
+				out_messages = {}
+        for outlet_name in self.outlets:
+            out_messages[outlet_name] = messages[outlet_name]
         
-        self.op = moconut.module_map[self.op_type](
-            *moconut.pack_config_map[self.op_type](
-                config = config
-            )
-        )
+        return messages
 
-class LeakyReLUSubPatch(ModuleSubPatch):
+class LeakyReLUSubpatch(moconut.Subpatch):
     def __init__(
         self,
         parents  : Optional[list[torch.nn.Module]],
@@ -35,13 +39,47 @@ class LeakyReLUSubPatch(ModuleSubPatch):
     ):
         super().__init__('leakyrelu', inlets, outlets, config, device)
         
-    def send(self, inlet_group : list):
-        return [self.op(inlet_group[i]) for i in range(len(inlet_group))]
+        # Subpatch Constraints
+        if len(self.inlets) != len(self.outlets):
+        		raise AttributeError(f"{self.__class__.__name__}::SubpatchConstraintError - Subpatch '{self.op_type}' requires the same number of inlets as outlets")
+  			
+  			# Replace moconut.AttributeName with appropriate parent information
+  			for arg in config:
+  					if isinstance(config[arg], moconut.AttributeName):
+  							attr_found = False
+  							for parent in parents[::-1]:
+  									if hasattr(parent, arg):
+  											config[arg] = getattr(parent, arg)
+  											attr_found = True
+  											break
+  											
+  							if not attr_found:
+            				raise AttributeError(f"{self.__class__.__name__}::AttributeNotFound - {self.repeat_over} not found in parent patches.")
+  			
+  			# Set operation used for the Subpatch
+  			self.op = moconut.module_map[self.op_type](
+  					*moconut.pack_config_map[self.op_type](
+  							config = self.config
+  					)
+  			)
+        
+    def forward(self, in_messages : dict) -> dict:
+    		if len(in_messages) != len(self.inlets):
+    				raise RuntimeError(f"{self.__class__.__name__}::SubpatchInputMessageError - Subpatch '{self.op_type}' was given {len(in_messages)} inputs, but it has {len(self.inlets)} inlets.")
+  
+    		out_messages = {}
+    		for i in range(len(self.outlets))
+    				inlet_name = self.inlets[i]
+    				outlet_name = self.outlets[i]
+    				out_messages[outlet_name] = self.op(in_messages[inlet_name])
+    				
+    		return out_messages
+				
     
-class Conv1dSubPatch(ModuleSubPatch):
+class Conv1dSubpatch(moconut.Subpatch):
     def __init__(
         self,
-        parents  : Optional[list[torch.nn.Module]],
+        parents : Optional[list[torch.nn.Module]],
         inlets  : list[str],
         outlets : list[str],
         config  : dict,
@@ -49,13 +87,46 @@ class Conv1dSubPatch(ModuleSubPatch):
     ):
         super().__init__('conv1d', inlets, outlets, config, device)
         
-    def send(self, inlet_group : list):
-        return [self.op(inlet_group[i]) for i in range(len(inlet_group))]
+        # Subpatch Constraints
+        if len(self.inlets) != len(self.outlets):
+        		raise AttributeError(f"{self.__class__.__name__}::SubpatchConstraintError - Subpatch '{self.op_type}' requires the same number of inlets as outlets")
+  			
+  			# Replace moconut.AttributeName with appropriate parent information
+  			for arg in config:
+  					if isinstance(config[arg], moconut.AttributeName):
+  							attr_found = False
+  							for parent in parents[::-1]:
+  									if hasattr(parent, arg):
+  											config[arg] = getattr(parent, arg)
+  											attr_found = True
+  											break
+  											
+  							if not attr_found:
+            				raise AttributeError(f"{self.__class__.__name__}::AttributeNotFound - {self.repeat_over} not found in parent patches.")
+  			
+  			# Set operation used for the Subpatch
+  			self.op = moconut.module_map[self.op_type](
+  					*moconut.pack_config_map[self.op_type](
+  							config = self.config
+  					)
+  			)
+        
+    def forward(self, in_messages : dict) -> dict:
+    		if len(in_messages) != len(self.inlets):
+    				raise RuntimeError(f"{self.__class__.__name__}::SubpatchInputMessageError - Subpatch '{self.op_type}' was given {len(in_messages)} inputs, but it has {len(self.inlets)} inlets.")
+  
+    		out_messages = {}
+    		for i in range(len(self.outlets))
+    				inlet_name = self.inlets[i]
+    				outlet_name = self.outlets[i]
+    				out_messages[outlet_name] = self.op(in_messages[inlet_name])
+    				
+    		return out_messages
 
 ################################################################
-# TODO: Generalize the SubPatch.
+# TODO: Generalize the Subpatch.
 ################################################################
-class RepeatingSubPatch(torch.nn.Module):
+class RepeatingSubpatch(torch.nn.Module):
     def __init__(
         self,
         parents  : Optional[list[torch.nn.Module]],
@@ -64,7 +135,7 @@ class RepeatingSubPatch(torch.nn.Module):
         config  : dict,
         device  : Optional[str]  = None
     ):
-        super(RepeatingSubPatch, self).__init__()
+        super(RepeatingSubpatch, self).__init__()
         self.op_type = 'repeating_subpatch'
         self.inlets  = inlets
         self.outlets = outlets
@@ -113,7 +184,7 @@ class RepeatingSubPatch(torch.nn.Module):
                     )
                 )
         
-    def send(self, in_messages : dict) -> dict:
+    def forward(self, in_messages : dict) -> dict:
         messages = in_messages
         for i in range(len(self.operations)):
             messages = self.operations[i](messages)

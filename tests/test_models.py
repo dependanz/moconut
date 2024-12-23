@@ -73,7 +73,7 @@ class TestPatching(unittest.TestCase):
                                         'padding_mode' : 'zeros'
                                     }
                                 },
-                            ]
+                                ```]
                         }
                     },
                 ]
