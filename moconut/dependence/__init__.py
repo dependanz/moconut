@@ -1,6 +1,6 @@
 from .list import *
 
-from typing import Callable
+from typing import Callable, List
 
 class AttributeName:
     def __init__(
@@ -21,7 +21,7 @@ class AttributeName:
 class DependentDefault:
     def __init__(
         self, 
-        parents : list[str], 
+        parents    : List[str], 
         dependence : Callable
     ):
         self.parents = parents

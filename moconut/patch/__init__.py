@@ -43,7 +43,7 @@ def Patch(
             config,
             device : Optional[str] = None
         ):
-            super(Patch, self).__init__()
+            super(MoconutPytorchPatch, self).__init__()
             self.config = config
             self.device = device
 

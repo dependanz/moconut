@@ -1,8 +1,8 @@
+from . import pack
+
 from .maps import *
 from .patch import *
-
-from . import pack
-from . import dependence
+from .dependence import *
 
 ################################################################
 # Empty user-defined module map

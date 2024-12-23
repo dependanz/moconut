@@ -92,10 +92,15 @@ class RepeatingSubPatch(torch.nn.Module):
         ################################################################
         # Setup Compute Graph
         ################################################################
+        attr_found = False
         for parent in parents:
             if hasattr(parent, self.repeat_over):
                 setattr(self, self.repeat_over, getattr(parent, self.repeat_over))
+                attr_found = True
                 break
+        if not attr_found:
+            raise AttributeError(f"{self.__class__.__name__}::AttributeNotFound - {self.repeat_over} not found in parent patches.")
+        
         self.operations = torch.nn.ModuleList()
         for i in range(len(getattr(self, self.repeat_over))):
             for subpatch in self.compute_graph:
@@ -108,5 +113,13 @@ class RepeatingSubPatch(torch.nn.Module):
                     )
                 )
         
-    def send(self, inlet_group : list):
-        return [self.op(inlet_group[i]) for i in range(len(inlet_group))]
+    def send(self, in_messages : dict) -> dict:
+        messages = in_messages
+        for i in range(len(self.operations)):
+            messages = self.operations[i](messages)
+
+        out_messages = {}
+        for outlet_name in self.outlets:
+            out_messages[outlet_name] = messages[outlet_name]
+        
+        return out_messages
