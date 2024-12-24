@@ -8,17 +8,17 @@ from .models import *
 subpatch_map = {}
 subpatch_map.update(
     {
-        'conv1d' : Conv1dSubPatch
+        'conv1d' : Conv1dSubpatch
     }
 )
 subpatch_map.update(
     {
-        'leakyrelu' : LeakyReLUSubPatch
+        'leakyrelu' : LeakyReLUSubpatch
     }
 )
 subpatch_map.update(
     {
-        'repeating_subpatch' : LeakyReLUSubPatch
+        'repeating_subpatch' : RepeatingSubpatch
     }
 )
 
@@ -97,6 +97,30 @@ def Patch(
             ################################################################
             # Setup Compute Graph
             ################################################################
-
+            if 'compute_graph' not in config:
+                raise ValueError(f"{self.__class__.__name__}::RequirementError - 'compute_graph'")
+            self.compute_graph = config['compute_graph']
+            if not isinstance(self.compute_graph, list):
+                raise ValueError(f"{self.__class__.__name__}::RequiredArgTypeMismatch - 'compute_graph' should be a list of dicts.")
+            
+            self.operations = torch.nn.ModuleList()
+            for subpatch in self.compute_graph:
+                self.operations.append(
+                    moconut.subpatch_map[subpatch['op_type']](
+                        parents = [self],
+                        inlets  = subpatch['inlets'],
+                        outlets = subpatch['outlets'],
+                        config  = subpatch['config']
+                    )
+                )
+                
+        def forward(self, in_messages : dict) -> dict:
+            messages = in_messages
+            for i in range(len(self.operations)):
+                messages.update(
+                    self.operations[i](messages)
+                )
+            
+            return messages
 
     return MoconutPytorchPatch

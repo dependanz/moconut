@@ -39,10 +39,9 @@ class TestPatching(unittest.TestCase):
         model = ConvResBlock1DStack(
             config = {
                 'in_dim'  : 512,
-                'kernel_sizes' : [3, 3],
+                'kernel_sizes' : [3 for _ in range(10)],
                 # 'dilations'    : [1, 1],
-                'activation'   : {'module' : 'leakyrelu'},
-
+                # 'activation'   : {'module' : 'leakyrelu'},
                 'compute_graph' : [
                     {
                         'op_type' : 'repeating_subpatch',
@@ -66,14 +65,14 @@ class TestPatching(unittest.TestCase):
                                         'out_channels' : moconut.AttributeName('in_dim'),
                                         'kernel_size'  : moconut.AttributeName('kernel_sizes')[...],
                                         'stride'       : 1,
-                                        'padding'      : 'same',
+                                        'padding'      : 'valid',
                                         'dilation'     : moconut.AttributeName('dilations')[...],
                                         'groups'       : 1,
                                         'bias'         : True,
                                         'padding_mode' : 'zeros'
                                     }
                                 },
-                                ```]
+                            ]
                         }
                     },
                 ]
@@ -83,7 +82,11 @@ class TestPatching(unittest.TestCase):
         #######################################
         # Test the patch
         #######################################
-        ...
+        # print(model)
+        test_input = {'x' : torch.randn((5,512,356))}
+        test_output = model(test_input)
+        
+        assert test_output['x'].shape[-1] == 336
         
 if __name__ == '__main__':
     unittest.main()

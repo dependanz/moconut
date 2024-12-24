@@ -7,12 +7,16 @@ class AttributeName:
         self, 
         name
     ):
-        self.name = name
+        self.name    = name
+        self.index   = -1
         self.indexed = False
     
     def __getitem__(self, hash):
         if hash is Ellipsis:
-            self.indexed = not self.indexed
+            self.indexed = True
+        elif hash is int:
+            self.indexed = True
+            self.index = hash
         return self
 
     def __str__(self):
