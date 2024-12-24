@@ -10,6 +10,7 @@ class AttributeName:
         self.name    = name
         self.index   = -1
         self.indexed = False
+        self.slice   = None
     
     def __getitem__(self, hash):
         if hash is Ellipsis:
@@ -17,6 +18,10 @@ class AttributeName:
         elif hash is int:
             self.indexed = True
             self.index = hash
+        elif hash is slice:
+            self.slice = hash
+            # [TODO] Implement sliced indexing for attributenames
+            
         return self
 
     def __str__(self):

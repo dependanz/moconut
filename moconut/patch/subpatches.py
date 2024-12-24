@@ -7,10 +7,10 @@ class Subpatch(torch.nn.Module):
     def __init__(
         self,
         op_type : str,
-        parents : Optional[List[torch.nn.Module]],
         inlets  : List[str],
         outlets : List[str],
         config  : dict,
+        parents : Optional[List[torch.nn.Module]] = None,
         device  : Optional[str] = None
     ):
         super(Subpatch, self).__init__()
@@ -32,10 +32,10 @@ class Subpatch(torch.nn.Module):
 class LeakyReLUSubpatch(Subpatch):
     def __init__(
         self,
-        parents  : Optional[list[torch.nn.Module]],
         inlets  : list[str],
         outlets : list[str],
         config  : dict,
+        parents : Optional[list[torch.nn.Module]] = None,
         device  : Optional[str] = None
     ): 
         super(LeakyReLUSubpatch, self).__init__(
@@ -87,10 +87,10 @@ class LeakyReLUSubpatch(Subpatch):
 class Conv1dSubpatch(Subpatch):
     def __init__(
         self,
-        parents : Optional[list[torch.nn.Module]],
         inlets  : list[str],
         outlets : list[str],
         config  : dict,
+        parents : Optional[list[torch.nn.Module]] = None,
         device  : Optional[str] = None
     ):
         super(Conv1dSubpatch, self).__init__(
@@ -151,10 +151,10 @@ class Conv1dSubpatch(Subpatch):
 class RepeatingSubpatch(torch.nn.Module):
     def __init__(
         self,
-        parents  : Optional[list[torch.nn.Module]],
         inlets  : list[str],
         outlets : list[str],
         config  : dict,
+        parents : Optional[list[torch.nn.Module]] = None,
         device  : Optional[str]  = None
     ):
         super(RepeatingSubpatch, self).__init__()
