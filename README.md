@@ -2,64 +2,203 @@
 
 <!-- `m.o.c.o.n.u.t. oversees construction of new universal templates` ... nah. -->
 
-1. Various python utilities for fast model prototyping.
-2. A parser of a DSL for overseeing the above.
-
-## TODO:
-- [ ] Control flow
-- [ ] DSL Parser
-- [ ] Generalize to other AD libs
-
-## Proposed format:
-1. Objects:
-	- ```{object_name(num_times),...}(num_times)<*params>[*inlet_names] -> [*outlet_names]```
-2. Types:
-	- ```_type<*params>(repeats)```
-3. Param special values:
-	- `:` denotes "doesn't matter" or "ignore".
-	- `a` denotes auto, or infer argument from previous object.
-4. Inlet/Outlet special values:
-	- `$number`, denotes a placeholder of variable names based on what's passed into the inlets and which variables the outlets will connect to.
+## Abstraction level 1
 
 ```Python
-	import moconut
-	
-	# 'object_name'<*params>[*inlets] -> [*outlets]
-	unet = moconut({
-		'conv_relu' : [
-			"in<_t<:,a,a,a>>[$1]",
-			"conv<3,3>[$1] -> [$1]",
-			"relu[$1] -> [$1]",
-			"out<_t<:,a,a,a>>[$1]"
+import moconut
+
+# Add a patch to the current patch library
+moconut.AddPatch('mlp3',moconut.Patch(
+	required = {
+		'in_dim' : int,
+		'dims'   : list
+	},
+	independent = {},
+	dependent   = {},
+	constraints = [
+		moconut.constraint.io.injective(), # num_inlets == num_outlets (and each outlet has to be given a value.)
+		moconut.constraint.list.has_length(3)('dims')
+	],
+	compute_graph = {
+		'objects' : [
+			{
+				'name'    : 'linear0',
+				'op_type' : 'linear',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {
+					'in_features'  : moconut.AttributeName('in_dim'),
+					'out_features' : moconut.AttributeName('dims')[0],
+					'bias'         : True
+				}
+			},
+			{
+				'name'    : 'linear1',
+				'op_type' : 'linear',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {
+					'in_features'  : moconut.AttributeName('dims')[0],
+					'out_features' : moconut.AttributeName('dims')[1],
+					'bias'         : True
+				}
+			},
+			{
+				'name'    : 'linear2',
+				'op_type' : 'linear',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {
+					'in_features'  : moconut.AttributeName('dims')[1],
+					'out_features' : moconut.AttributeName('dims')[2],
+					'bias'         : True
+				}
+			},
+			{
+				'name'    : 'activation0',
+				'op_type' : 'relu',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {}
+			},
+			{
+				'name'    : 'activation1',
+				'op_type' : 'relu',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {}
+			},
+			{
+				'name'    : 'activation2',
+				'op_type' : 'tanh',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {}
+			}
 		],
-		'conv_relu_maxpool' : [
-			"in<_t<:,a,a,a>>[$1]",
-			"conv_relu(2)[$1] -> [$1]",
-			"maxpool<2,2>[$1] -> [$2]",
-			"out<_t<:,a,a,a>(2)>[$1, $2]"
-		],
-		'upconv_concat_conv_relu' : [
-			"in<_t<:,a,a,a>(2)>[$1, $2]",
-			"upconv<2,2>[$2] -> [$3]",
-			"concat[$1,$3] -> [$3]",
-			"conv_relu(2)[$3] -> [$3]",
-			"out<_t<:,a,a,a>(2)>[$3]"
-		],
-		'op' : [
-			"in<_t<:,572,572,1>>[x0]",
-			"conv_relu_maxpool[x0] -> [x0, x1]",
-			"conv_relu_maxpool[x1] -> [x1, x2]",
-			"conv_relu_maxpool[x2] -> [x2, x3]",
-			"conv_relu_maxpool[x3] -> [x3, x4]",
-			"conv_relu(2)[x4] -> [x4]",
-			
-			"upconv_concat_conv_relu[x3,x4] -> [x5]",
-			"upconv_concat_conv_relu[x2,x5] -> [x6]",
-			"upconv_concat_conv_relu[x1,x6] -> [x7]",
-			"upconv_concat_conv_relu[x0,x7] -> [x8]"
-			
-			"conv<1,1>[x8] -> [x8]"
-			"out<_t<:,a,a,a>>[x8]"
+		'topology' : [
+			(['in[0]'], ['linear0[0]']),
+			(['linear0[0]'], ['activation0[0]']),
+			(['activation0[0]'], ['linear1[0]']),
+			(['linear1[0]'], ['activation1[0]']),
+			(['activation1[0]'], ['linear2[0]']),
+			(['linear2[0]'], ['activation2[0]']),
+			(['activation2[0]'], ['out[0]']),
 		]
-	})
+	}
+))
+
+moconut.AddPatch('simpleconv1d_classifier',moconut.Patch(
+	required = {
+		'dims'         : list,
+		'kernel_sizes' : list,
+	},
+	independent = {
+		'in_dim' : 1
+	},
+	dependent   = {
+		'strides' : moconut.DependentDefault(
+			parents = ['kernel_sizes'],
+			dependence = moconut.dependence.list.repeat_match_parent_len(
+				data = 1
+			)
+		)
+	},
+	constraints = [
+		moconut.constraint.list.has_length(3)('dims', 'kernel_sizes')
+	],
+	compute_graph = {
+		'objects' : [
+			{
+				'name'    : 'conv0',
+				'op_type' : 'conv1d',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {
+					'in_channels'  : moconut.AttributeName('in_dim'),
+					'out_channels' : moconut.AttributeName('dims')[0],
+					'kernel_size'  : moconut.AttributeName('kernel_sizes')[0],
+					'stride'       : 1,
+					'padding'      : 0,
+					'dilation'     : 1,
+					'groups'       : 1,
+					'bias'         : True,
+					'padding_mode' : 'zeros'
+				}
+			},
+			{
+				'name'    : 'conv1',
+				'op_type' : 'conv1d',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {
+					'in_channels'  : moconut.AttributeName('dims')[0],
+					'out_channels' : moconut.AttributeName('dims')[1],
+					'kernel_size'  : moconut.AttributeName('kernel_sizes')[1],
+					'stride'       : 1,
+					'padding'      : 0,
+					'dilation'     : 1,
+					'groups'       : 1,
+					'bias'         : True,
+					'padding_mode' : 'zeros'
+				}
+			},
+			{
+				'name'    : 'conv2',
+				'op_type' : 'conv1d',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {
+					'in_channels'  : moconut.AttributeName('dims')[1],
+					'out_channels' : moconut.AttributeName('dims')[2],
+					'kernel_size'  : moconut.AttributeName('kernel_sizes')[2],
+					'stride'       : 1,
+					'padding'      : 0,
+					'dilation'     : 1,
+					'groups'       : 1,
+					'bias'         : True,
+					'padding_mode' : 'zeros'
+				}
+			},
+			{
+				'name'    : 'mlp3_0',
+				'op_type' : 'mlp3',
+				'inlets'  : 1,
+				'outlets' : 1,
+				'config'  : {
+					'in_channels'  : moconut.AttributeName('dims')[1],
+					'out_channels' : moconut.AttributeName('dims')[2],
+					'kernel_size'  : moconut.AttributeName('kernel_sizes')[2],
+					'stride'       : 1,
+					'padding'      : 0,
+					'dilation'     : 1,
+					'groups'       : 1,
+					'bias'         : True,
+					'padding_mode' : 'zeros'
+				}
+			}
+		],
+		'topology' : [
+			(['in[0]'], ['conv0[0]']),
+			
+			(['conv0[0]'], ['activation0[0]']),
+			(['activation0[0]'], ['conv1[0]']),
+			
+			(['conv1[0]'], ['activation1[0]']),
+			(['activation1[0]'], ['conv2[0]']),
+			
+			(['conv1[0]'], ['activation2[0]']),
+
+			(['activation2[0]'], ['flatten0[0]']),
+			(['flatten0[0]'], ['mlp3_0[0]']),
+
+			(['mlp3_0[0]'], ['out[0]'])
+		]
+	}
+))
 ```
+
+## TODO:
+- [ ] Abstraction level 1
+- [ ] DSL Parser
+- [ ] Generalize to other AD libs
