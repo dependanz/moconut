@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "moconut"
-version = "0.0.4"
-dependencies = ['torch']
+version = "0.1.0.dev0"
+dependencies = ['torch>=2.0']
 authors = [
     { name = "Danzel Serrano", email = "danzel.serrano@gmail.com" }
 ]
-description = "Model Construction Utils"
+description = "Pure Data-style patching for PyTorch models, with NEAT"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -18,5 +18,11 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 
+[project.optional-dependencies]
+dev = ["pytest"]
+
 [project.urls]
 Homepage = "https://github.com/dependanz/moconut"
+
+[tool.setuptools.packages.find]
+include = ["moconut*"]
